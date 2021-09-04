@@ -5,6 +5,9 @@ const morgan = require("morgan");
 // DB config
 const connectDB = require("./config/db");
 
+// Error Handler
+const errorHandler = require("./middleware/error");
+
 dotenv.config({ path: "./config/config.env" });
 
 // connect to DB
@@ -22,6 +25,8 @@ if (process.env.NODE_ENV === "development") {
 }
 
 app.use("/api/medical-reports", medicalReports);
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
