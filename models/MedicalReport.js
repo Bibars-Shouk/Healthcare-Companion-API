@@ -40,6 +40,18 @@ const MedicalReportSchema = new Schema({
     type: String,
     required: [true, "Please include the diagnose"],
   },
+  prescription: {
+    type: Schema.Types.ObjectId,
+    ref: "Prescription",
+  },
+  labTests: {
+    type: Schema.Types.ObjectId,
+    ref: "HealthTest",
+  },
+  radiologyTests: {
+    type: Schema.Types.ObjectId,
+    ref: "HealthTest",
+  },
   isVisible: {
     type: Boolean,
     default: true,

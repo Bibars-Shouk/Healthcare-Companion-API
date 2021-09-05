@@ -1,4 +1,7 @@
 const MedicalReport = require("../models/MedicalReport");
+const Prescription = require("../models/Prescription");
+const HealthTest = require("../models/HealthTest");
+
 const ErrorResponse = require("../utils/errorResponse");
 const asyncHandler = require("../middleware/async");
 
@@ -6,7 +9,25 @@ const asyncHandler = require("../middleware/async");
 // @route       POST /api/medical-reports
 // @access      Private
 exports.createMedicalReport = asyncHandler(async (req, res, next) => {
-  await MedicalReport.create(req.body);
+  const { radiologyTests, labTests, prescription, mainReport } = req.body;
+  const report = { ...mainReport };
+
+  if (prescription) {
+    const newPrescription = await Prescription.create(prescription);
+    report.prescription = newPrescription._id;
+  }
+
+  if (labTests) {
+    const newLabTest = await HealthTest.create(labTests);
+    report.labTests = newLabTest._id;
+  }
+
+  if (radiologyTests) {
+    const newRadiologyTest = await HealthTest.create(radiologyTests);
+    report.radiologyTests = newRadiologyTest._id;
+  }
+
+  await MedicalReport.create(report);
   res.status(201).json({ success: true });
 });
 
@@ -15,7 +36,10 @@ exports.createMedicalReport = asyncHandler(async (req, res, next) => {
 // @access      Private
 exports.getMedicalReport = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const report = await MedicalReport.findById(id);
+  const report = await MedicalReport.findById(id)
+    .populate("prescription")
+    .populate("radiologyTests")
+    .populate("labTests");
 
   if (!report) {
     return next(
