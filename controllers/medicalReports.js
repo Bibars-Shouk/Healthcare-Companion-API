@@ -48,3 +48,21 @@ exports.getMedicalReport = asyncHandler(async (req, res, next) => {
   }
   res.status(200).json({ success: true, data: report });
 });
+
+// @desc        Toggle report visibility
+// @route       PUT /api/medical-reports/:id
+// @access      Private
+exports.toggleReportVisibility = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const report = await MedicalReport.findById(id);
+
+  if (!report) {
+    return next(
+      new ErrorResponse(`Resource not found with the id of ${id}`, 404)
+    );
+  }
+
+  await MedicalReport.findByIdAndUpdate(id, { isVisible: !report.isVisible });
+
+  res.status(200).json({ success: true });
+});
