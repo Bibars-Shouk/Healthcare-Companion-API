@@ -1,6 +1,8 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
+const fileUpload = require("express-fileupload");
+const path = require("path");
 
 // DB config
 const connectDB = require("./config/db");
@@ -15,6 +17,8 @@ connectDB();
 
 // Route files
 const medicalReports = require("./routes/medicalReports");
+const prescriptions = require("./routes/prescriptions");
+const healthTests = require("./routes/healthTests");
 
 const app = express();
 
@@ -24,7 +28,13 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
+app.use(fileUpload());
+
+app.use(express.static(path.join(__dirname, "public")));
+
 app.use("/api/medical-reports", medicalReports);
+app.use("/api/prescriptions", prescriptions);
+app.use("/api/health-tests", healthTests);
 
 app.use(errorHandler);
 
