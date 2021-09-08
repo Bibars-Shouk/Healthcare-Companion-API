@@ -60,6 +60,8 @@ module.exports = function (childSchema) {
     },
   });
 
+  //? TODO:  Encrypt Password -  Sign JWT and return
+
   UserSchema.add(childSchema);
 
   return UserSchema;
