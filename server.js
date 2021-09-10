@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const morgan = require("morgan");
 const fileUpload = require("express-fileupload");
 const path = require("path");
+const cookieParser = require("cookie-parser");
 
 // DB config
 const connectDB = require("./config/db");
@@ -19,10 +20,13 @@ connectDB();
 const medicalReports = require("./routes/medicalReports");
 const prescriptions = require("./routes/prescriptions");
 const healthTests = require("./routes/healthTests");
+const auth = require("./routes/auth");
 
 const app = express();
 
 app.use(express.json());
+
+app.use(cookieParser());
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
@@ -35,6 +39,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/api/medical-reports", medicalReports);
 app.use("/api/prescriptions", prescriptions);
 app.use("/api/health-tests", healthTests);
+app.use("/api/auth", auth);
 
 app.use(errorHandler);
 
