@@ -6,8 +6,15 @@ const {
   getMedicalReport,
   toggleReportVisibility,
 } = require("../controllers/medicalReports");
+const { protect, authorize } = require("../middleware/auth");
 
-router.route("/").post(createMedicalReport);
-router.route("/:id").get(getMedicalReport).put(toggleReportVisibility);
+router
+  .route("/:accessCode")
+  .post(protect, authorize("Doctor"), createMedicalReport);
+
+router
+  .route("/:id")
+  .get(protect, authorize("Patient", "Doctor"), getMedicalReport)
+  .put(protect, authorize("Patient"), toggleReportVisibility);
 
 module.exports = router;

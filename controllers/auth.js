@@ -2,6 +2,7 @@ const Doctor = require("../models/Doctor");
 const MedicalFacilityworker = require("../models/MedicalFacilityworker");
 const Patient = require("../models/Patient");
 const User = require("../models/User");
+const AccessCode = require("../models/AccessCode");
 
 const asyncHandler = require("../middleware/async");
 const ErrorResponse = require("../utils/errorResponse");
@@ -64,7 +65,7 @@ exports.login = asyncHandler(async (req, res, next) => {
   sendTokenResponse(user, 200, res);
 });
 
-// ? Get token from model and create cookie and send response
+// @desc: Get token from model and create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
   // Create token
   const token = user.getSignedJwtToken();
@@ -84,4 +85,68 @@ const sendTokenResponse = (user, statusCode, res) => {
     .status(statusCode)
     .cookie("token", token, options)
     .json({ success: true, token });
+};
+
+// @desc        Get the current logged in user
+// @route       GET /api/auth/me
+// @access      Private
+exports.getMe = asyncHandler(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+  let userRole = user.role;
+  if (userRole === "Doctor") {
+    await user.populate("doctor");
+  } else if (userRole === "Patient") {
+    await user.populate("patient");
+  } else if (userRole === "Medical-Facility-Worker") {
+    await user.populate("medicalFacilityWorker");
+  }
+
+  res.status(200).json({ success: true, data: user });
+});
+
+// @desc        Get an access code for the user
+// @route       GET /api/auth/access-code
+// @access      Private/patient
+exports.getAccessCode = asyncHandler(async (req, res, next) => {
+  let accessCode = await AccessCode.find(
+    { patient: req.user.id },
+    "code"
+  ).select("-_id");
+  if (accessCode.length > 0) {
+    res.status(200).json({ success: true, code: accessCode[0].code });
+  } else {
+    const accessCodes = await AccessCode.find({}, "code").select("-_id");
+    let codesList = [];
+    accessCodes.forEach((code) => {
+      codesList.push(code.code);
+    });
+
+    let generatedCode;
+
+    do {
+      generatedCode = generateCode();
+    } while (codesList.indexOf(generatedCode) > -1);
+
+    accessCode = await AccessCode.create({
+      patient: req.user._id,
+      code: generatedCode,
+    });
+
+    res.status(200).json({ success: true, code: accessCode.code });
+  }
+});
+
+// @desc: generate an access code and return it
+const generateCode = () => {
+  let code = "";
+
+  for (let i = 0; i < 7; i++) {
+    let random = Math.floor(Math.random() * 11) + 1;
+    if (random <= 5) {
+      code += String.fromCharCode(Math.floor(Math.random() * 26) + 65);
+    } else {
+      code += String.fromCharCode(Math.floor(Math.random() * 10) + 48);
+    }
+  }
+  return code;
 };

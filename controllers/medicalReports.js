@@ -1,16 +1,26 @@
 const MedicalReport = require("../models/MedicalReport");
 const Prescription = require("../models/Prescription");
 const HealthTest = require("../models/HealthTest");
+const AccessCode = require("../models/AccessCode");
 
 const ErrorResponse = require("../utils/errorResponse");
 const asyncHandler = require("../middleware/async");
 
 // @desc        create new medical report
-// @route       POST /api/medical-reports
-// @access      Private
+// @route       POST /api/medical-reports/:accessCode
+// @access      Private/Doctor
 exports.createMedicalReport = asyncHandler(async (req, res, next) => {
+  const { accessCode } = req.params;
+  const access = await AccessCode.findOne({ code: accessCode });
+
+  if (!access) {
+    return next(new ErrorResponse(`Unauthorized action`, 403));
+  }
+
   const { radiologyTests, labTests, prescription, mainReport } = req.body;
   const report = { ...mainReport };
+  report.patient = access.patient;
+  report.doctor = req.user.id;
 
   if (prescription) {
     const newPrescription = await Prescription.create(prescription);
