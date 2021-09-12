@@ -4,8 +4,11 @@ const router = express.Router();
 const {
   getPrescription,
   setPrescriptionAsFulfilled,
+  getPrescriptions,
 } = require("../controllers/prescriptions");
 const { protect, authorize } = require("../middleware/auth");
+
+router.route("/").get(protect, authorize("Patient"), getPrescriptions);
 
 router
   .route("/:id")

@@ -10,6 +10,14 @@ const notEmpty = (medications) => {
 };
 
 const PrescriptionSchema = new Schema({
+  patient: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
+  doctor: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
   medications: {
     type: [String],
     required: true,

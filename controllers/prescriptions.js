@@ -3,14 +3,46 @@ const Prescription = require("../models/Prescription");
 const asyncHandler = require("../middleware/async");
 const ErrorResponse = require("../utils/errorResponse");
 
-//? TODO: get all prescriptions for a user by his id
+// @desc        get all prescription for patient by his id
+// @route       GET /api/prescriptions
+// @access      Private/Patient
+exports.getPrescriptions = asyncHandler(async (req, res, next) => {
+  const prescriptions = await Prescription.find({ patient: req.user.id })
+    .select("-isFulfilled")
+    .populate({
+      path: "patient",
+      select: "-_id firstName middleName lastName gender dateOfBirth",
+    })
+    .populate({
+      path: "doctor",
+      select: "-_id firstName middleName lastName",
+      populate: {
+        path: "doctor",
+        select: "-_id specialty clinicName phoneNumbers",
+      },
+    });
+
+  res.status(200).json({ success: true, data: prescriptions });
+});
 
 // @desc        get prescription by id
 // @route       GET /api/prescriptions/:id
-// @access      Private
+// @access      Private/Patient
 exports.getPrescription = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const prescription = await Prescription.findById(id);
+  const prescription = await Prescription.findById(id)
+    .populate({
+      path: "patient",
+      select: "-_id firstName middleName lastName gender dateOfBirth",
+    })
+    .populate({
+      path: "doctor",
+      select: "-_id firstName middleName lastName",
+      populate: {
+        path: "doctor",
+        select: "-_id specialty clinicName phoneNumbers",
+      },
+    });
 
   if (!prescription) {
     return next(
@@ -24,7 +56,7 @@ exports.getPrescription = asyncHandler(async (req, res, next) => {
 
 // @desc        Set a prescription as fulfilled
 // @route       PUT /api/prescriptions/:id
-// @access      Private
+// @access      Private/Patient
 exports.setPrescriptionAsFulfilled = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const prescription = await Prescription.findById(id);

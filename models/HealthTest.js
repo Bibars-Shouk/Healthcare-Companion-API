@@ -10,6 +10,14 @@ var notEmpty = function (tests) {
 };
 
 const HealthTestSchema = new Schema({
+  patient: {
+    type: Schema.Types.ObjectId,
+    ref: "Patient",
+  },
+  doctor: {
+    type: Schema.Types.ObjectId,
+    ref: "Doctor",
+  },
   testType: {
     type: String,
     enum: ["Radiology-Test", "Lab-Test"],
