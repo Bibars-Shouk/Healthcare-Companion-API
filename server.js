@@ -21,6 +21,7 @@ const medicalReports = require("./routes/medicalReports");
 const prescriptions = require("./routes/prescriptions");
 const healthTests = require("./routes/healthTests");
 const auth = require("./routes/auth");
+const account = require("./routes/account");
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use("/api/medical-reports", medicalReports);
 app.use("/api/prescriptions", prescriptions);
 app.use("/api/health-tests", healthTests);
 app.use("/api/auth", auth);
+app.use("/api/account", account);
 
 app.use(errorHandler);
 

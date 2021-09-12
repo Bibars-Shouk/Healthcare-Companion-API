@@ -55,9 +55,6 @@ const UserSchema = new Schema({
   resetPasswordExpire: {
     type: Date,
   },
-  associate: {
-    type: Schema.Types.ObjectId,
-  },
   doctor: {
     type: Schema.Types.ObjectId,
     ref: "Doctor",
