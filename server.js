@@ -4,6 +4,11 @@ const morgan = require("morgan");
 const fileUpload = require("express-fileupload");
 const path = require("path");
 const cookieParser = require("cookie-parser");
+const mongoSanitize = require("express-mongo-sanitize");
+const helmet = require("helmet");
+const xss = require("xss-clean");
+const hpp = require("hpp");
+const cors = require("cors");
 
 // DB config
 const connectDB = require("./config/db");
@@ -34,6 +39,11 @@ if (process.env.NODE_ENV === "development") {
 }
 
 app.use(fileUpload());
+app.use(mongoSanitize());
+app.use(helmet());
+app.use(xss());
+app.use(hpp());
+app.use(cors());
 
 app.use(express.static(path.join(__dirname, "public")));
 
