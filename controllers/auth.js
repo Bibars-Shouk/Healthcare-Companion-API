@@ -1,3 +1,5 @@
+const nodemailer = require("nodemailer");
+
 const Doctor = require("../models/Doctor");
 const MedicalFacilityworker = require("../models/MedicalFacilityworker");
 const Patient = require("../models/Patient");
@@ -87,6 +89,18 @@ const sendTokenResponse = (user, statusCode, res) => {
     .json({ success: true, token });
 };
 
+// @desc        Log user out and clear cookies
+// @route       GET /api/auth/logout
+// @access      Private
+exports.logout = asyncHandler(async (req, res, next) => {
+  res.cookie("token", "none", {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+  });
+
+  res.status(200).json({ success: true, token: {} });
+});
+
 // @desc        Get the current logged in user
 // @route       GET /api/auth/me
 // @access      Private
@@ -150,3 +164,132 @@ const generateCode = () => {
   }
   return code;
 };
+
+// @desc        Send email on forgot password
+// @route       PUT /api/auth/forgot-password
+// @access      public
+exports.forgotPassword = asyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+  let user = await User.findOne({ email: email });
+
+  if (!user) {
+    return next(new ErrorResponse(`No account with email ${email}`, 404));
+  }
+
+  const code = generateCode();
+
+  await User.findByIdAndUpdate(user._id, {
+    resetPasswordToken: code,
+    resetPasswordExpire: Date.now() + 60 * 60 * 1000,
+  });
+
+  const mail = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.HCC_EMIL,
+      pass: process.env.HCC_EMIL_PASSWORD,
+    },
+  });
+
+  let message = {
+    from: process.env.HCC_EMIL,
+    to: email,
+    subject: "Forgot your password!",
+    text: `It seems you forgot the password for your Healthcare Companion account. Your verification code is ${code} include it with the new password within 1hr`,
+    html: `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <style>        
+          h2{
+            font-weight:300;
+          }
+          .box1{
+            padding:15px;        
+            width:90%;
+            background-color:#3887d2;
+            color:#fff;
+            border-radius: 30px 100px;
+            text-align:center;
+          }        
+          p{
+            font-size:16px;
+          }
+          span{
+            letter-spacing: 2px;
+          }
+        </style>
+      </head>
+      <body>
+        <h2>Healthcare Companion</h2>
+        <div class="box1">
+          <div class="boxContent">
+          <h1>Forgotten Password Request.</h1>
+          <p>
+            It seems you forgot the password for your Healthcare Companion account. <br />
+            Your verification code is { <span>${code}</span> }. <br />
+            include it with the new password within 1 hour.
+          </p>
+          </div>
+        </div>
+      </body>
+    </html>
+    `,
+  };
+
+  try {
+    mail.sendMail(message, (err, info) => {
+      if (err) {
+        console.log(err);
+        return next(
+          new ErrorResponse(
+            `Something went wrong with the server while sending the reset password email.`,
+            500
+          )
+        );
+      } else {
+        res.status(200).json({ success: true });
+      }
+    });
+  } catch (err) {
+    console.log(err);
+
+    return next(
+      new ErrorResponse(
+        `Something went wrong with the server while sending the reset password email.`,
+        500
+      )
+    );
+  }
+});
+
+// @desc        Reset password
+// @route       PUT /api/auth/reset-password
+// @access      public
+exports.resetPassword = asyncHandler(async (req, res, next) => {
+  const { email, newPassword, verificationCode } = req.body;
+  const user = await User.findOne({ email: email });
+
+  if (!user) {
+    return next(new ErrorResponse(`No account with email ${email}`, 404));
+  }
+
+  if (user.resetPasswordToken !== verificationCode) {
+    return next(new ErrorResponse(`Invalid verification code.`, 400));
+  }
+
+  if (new Date(user.resetPasswordExpire) < new Date(new Date().toISOString())) {
+    return next(
+      new ErrorResponse(
+        `verification code is outdated. Get a new code and try again`,
+        400
+      )
+    );
+  }
+
+  user.password = newPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
+  sendTokenResponse(user, 200, res);
+});
