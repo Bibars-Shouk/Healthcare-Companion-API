@@ -138,3 +138,14 @@ dist
 # Config env data
 
 config/config.env
+
+# Images and pdf
+
+_.jpg
+_.jpeg
+_.gif
+_.webp
+_.png
+_.svg
+_.pdf
+_.ico
