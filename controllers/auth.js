@@ -165,6 +165,57 @@ const generateCode = () => {
   return code;
 };
 
+// @desc        Get patient by access code
+// @route       GET /api/auth/get-patient/:accessCode
+// @access      Private/doctor - medical facility worker
+exports.getPatient = asyncHandler(async (req, res, next) => {
+  const { accessCode } = req.params;
+
+  const queryRes = await AccessCode.findOne({ code: accessCode }).select(
+    "patient"
+  );
+
+  if (!queryRes) {
+    return next(new ErrorResponse(`Invalid Access Code!`, 401));
+  }
+
+  const patient = await queryRes.populate("patient");
+  const {
+    firstName,
+    middleName,
+    lastName,
+    gender,
+    dateOfBirth,
+    profileImage,
+    patient: {
+      smokingHistory,
+      alcoholIntake,
+      drugUse,
+      familyHistoryInformation,
+      allergies,
+      chronicConditions,
+    },
+  } = await patient.patient.populate("patient");
+
+  res.status(200).json({
+    success: true,
+    data: {
+      firstName,
+      middleName,
+      lastName,
+      gender,
+      dateOfBirth,
+      profileImage,
+      smokingHistory,
+      alcoholIntake,
+      drugUse,
+      familyHistoryInformation,
+      allergies,
+      chronicConditions,
+    },
+  });
+});
+
 // @desc        Send email on forgot password
 // @route       PUT /api/auth/forgot-password
 // @access      public
